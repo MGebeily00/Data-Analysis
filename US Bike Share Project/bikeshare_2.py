@@ -1,0 +1,226 @@
+import time
+import pandas as pd
+import numpy as np
+
+CITY_DATA = { 'chicago': 'chicago.csv',
+              'new york city': 'new_york_city.csv',
+              'washington': 'washington.csv' }
+
+def get_filters():
+    """
+    Asks user to specify a city, month, and day to analyze.
+
+    Returns:
+        (str) city - name of the city to analyze
+        (str) month - name of the month to filter by, or "all" to apply no month filter
+        (str) day - name of the day of week to filter by, or "all" to apply no day filter
+    """
+    print('Hello! Let\'s explore some US bikeshare data!')
+    # get user input for city (chicago, new york city, washington). HINT: Use a while loop to handle invalid inputs
+    while True:
+        city = input('Please enter a city to explore (Your choices should be from Chicago, New York City, Washington): ').lower()
+        if city in CITY_DATA.keys():
+            print('City accepted. Choice is {}'.format(city.title()))
+            break
+        else:
+            print('That\'s not a valid city. Please try one of the 3 cities listed above again.')
+
+    # get user input for month (all, january, february, ... , june)
+    while True:
+        month = input('Please enter a month to filter (Your choices should be from January - June or all): ').lower()
+        months = ['january', 'february', 'march', 'april', 'may', 'june', 'all']
+        if month in months:
+            print('Input accepted. Choice is {}'.format(month.title()))
+            break
+        else:
+            print('That\'s not a valid choice. Please try one of the options listed above again.')
+
+    # get user input for day of week (all, monday, tuesday, ... sunday)
+    while True:
+        day = input('Please enter a day to filter (Your choices should be from Monday - Sunday or all): ').lower()
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'all']
+        if day in days:
+            print('Input accepted. Choice is {}'.format(day.title()))
+            break
+        else:
+            print('That\'s not a valid choice. Please try one of the options listed above again.')
+
+
+    print('-'*40)
+    return city, month, day
+
+
+def load_data(city, month, day):
+    """
+    Loads data for the specified city and filters by month and day if applicable.
+
+    Args:
+        (str) city - name of the city to analyze
+        (str) month - name of the month to filter by, or "all" to apply no month filter
+        (str) day - name of the day of week to filter by, or "all" to apply no day filter
+    Returns:
+        df - Pandas DataFrame containing city data filtered by month and day
+    """
+    df = pd.read_csv(CITY_DATA[city])
+
+    # convert the Start Time column to datetime
+    df['Start Time'] = pd.to_datetime(df['Start Time'])
+
+    # extract month and day of week from Start Time to create new columns
+    df['month'] = df['Start Time'].dt.month
+    df['day_of_week'] = df['Start Time'].dt.day_name()
+    df['hour'] = df['Start Time'].dt.hour
+
+    # filter by month if applicable
+    if month != 'all':
+        # use the index of the months list to get the corresponding int
+        months = ['january', 'february', 'march', 'april', 'may', 'june']
+        month = months.index(month)+1
+    
+        # filter by month to create the new dataframe
+        df = df[df['month']==month]
+
+    # filter by day of week if applicable
+    if day != 'all':
+        # filter by day of week to create the new dataframe
+        df = df[df['day_of_week'] == day.title()]
+
+    return df
+
+
+def time_stats(df):
+    """Displays statistics on the most frequent times of travel."""
+
+    print('\nCalculating The Most Frequent Times of Travel...\n')
+    start_time = time.time()
+
+    # display the most common month
+    common_month = df['month'].mode()[0]
+    months = ['january', 'february', 'march', 'april', 'may', 'june']
+    common_month = months[common_month - 1]
+    print('Most common month is:', common_month)
+    # display the most common day of week
+    common_day = df['day_of_week'].mode()[0]
+    print('Most common day is:', common_day)
+    # display the most common start hour
+    common_hour = df['hour'].mode()[0]
+    print('Most common hour is:', common_hour)
+
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def station_stats(df):
+    """Displays statistics on the most popular stations and trip."""
+
+    print('\nCalculating The Most Popular Stations and Trip...\n')
+    start_time = time.time()
+
+    # display most commonly used start station
+    common_Sstation = df['Start Station'].value_counts()[[0]]
+    print('Most common start station is:', common_Sstation)
+
+    # display most commonly used end station
+    common_Estation = df['End Station'].value_counts()[[0]]
+    print('Most common end station is:', common_Estation)
+
+    # display most frequent combination of start station and end station trip
+    common_combi = (df['Start Station'] + ' to ' + df['End Station']).value_counts()[[0]]
+    print('Most common combination is:', common_combi)
+
+
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def trip_duration_stats(df):
+    """Displays statistics on the total and average trip duration."""
+
+    print('\nCalculating Trip Duration...\n')
+    start_time = time.time()
+
+    # display total travel time
+    tot_time = df['Trip Duration'].sum()
+    print('The total duration of all trips was: ', tot_time, ' seconds')
+
+    # display mean travel time
+    mean_time = df['Trip Duration'].mean()
+    print('The mean duration of all trips was: ', mean_time, ' seconds')
+
+
+
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def user_stats(df, city):
+    """Displays statistics on bikeshare users."""
+
+    print('\nCalculating User Stats...\n')
+    start_time = time.time()
+
+    # Display counts of user types
+    user_types = df['User Type'].value_counts()
+    print('The types of users in this service along with their numbers:\n', user_types)
+
+
+    # Display counts of gender
+    
+    try:
+        #df.fillna(None, columns='Gender', inplace = True)
+        genders = df['Gender'].value_counts()
+        print('The genders of users in this service along with their numbers:\n', genders)
+    except:
+        #Change NaN values to None or string 'No info'
+        df.insert(7,'Genders', None)
+        print('{} does not have any information on gender.'.format(city.title()))
+
+        
+
+
+    # Display earliest, most recent, and most common year of birth
+    try:
+        #df.fillna(None, columns='Birth Year', inplace = True)
+        earliest = int(df['Birth Year'].min())
+        recent = int(df['Birth Year'].max())
+        common = int(df['Birth Year'].mode()[0])
+        print('The oldest birth year was {}, the youngest birth year was {} and the most common birth year was {}.'.format(earliest,recent,common))
+    except:
+        #Change NaN values to None or string 'No info'
+        df.insert(8,'Birth Year',None)
+        print('{} does not have any information on user birth years.'.format(city.title()))
+
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def main():
+    while True:
+        city, month, day = get_filters()
+        df = load_data(city, month, day)
+
+        time_stats(df)
+        station_stats(df)
+        trip_duration_stats(df)
+        user_stats(df, city)
+
+        i = 0
+        while True:
+            raw = input('\nWould you like to view some raw data about individual trips? Enter yes or no.\n')
+            if raw.lower() == 'yes':
+                for i in range(i, i+5):
+                    print(df.iloc[i,0:9])
+                    i += 5
+                    continue
+                    break
+            else:
+                break
+        
+
+        restart = input('\nWould you like to restart? Enter yes or no.\n')
+        if restart.lower() != 'yes':
+            break
+
+
+if __name__ == "__main__":
+	main()
